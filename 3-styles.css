@@ -1,0 +1,184 @@
+/* AirSaathi - Urban Air Quality Assistant */
+:root {
+  --bg: #f4f7f6;
+  --panel: #ffffff;
+  --ink: #12211c;
+  --muted: #5b6b64;
+  --line: #dbe5e0;
+  --brand: #0f766e;
+  --brand-dark: #115e59;
+  --brand-soft: #ccfbf1;
+  --warn: #b45309;
+  --radius: 14px;
+  --shadow: 0 1px 3px rgba(18, 33, 28, .08), 0 8px 24px rgba(18, 33, 28, .06);
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  font-family: "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  line-height: 1.55;
+}
+
+header.topbar {
+  position: sticky; top: 0; z-index: 20;
+  background: rgba(255, 255, 255, .92);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--line);
+}
+.topbar-inner {
+  max-width: 1080px; margin: 0 auto; padding: .65rem 1rem;
+  display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+}
+.logo { display: flex; align-items: center; gap: .5rem; font-weight: 700; font-size: 1.15rem; color: var(--brand-dark); }
+.logo svg { display: block; }
+nav.main { display: flex; gap: .25rem; margin-left: auto; flex-wrap: wrap; }
+nav.main a {
+  color: var(--muted); text-decoration: none; font-size: .92rem;
+  padding: .35rem .7rem; border-radius: 999px;
+}
+nav.main a:hover, nav.main a:focus-visible { background: var(--brand-soft); color: var(--brand-dark); }
+
+main { max-width: 1080px; margin: 0 auto; padding: 1.25rem 1rem 4rem; }
+section { margin-bottom: 2.25rem; }
+h1 { font-size: clamp(1.7rem, 3.4vw, 2.4rem); line-height: 1.15; margin: .4rem 0 .6rem; }
+h2 { font-size: 1.3rem; margin: 0 0 .8rem; color: var(--brand-dark); }
+h3 { font-size: 1.02rem; margin: 0 0 .5rem; }
+p.lead { color: var(--muted); max-width: 62ch; margin-top: 0; }
+
+.panel {
+  background: var(--panel); border: 1px solid var(--line);
+  border-radius: var(--radius); box-shadow: var(--shadow); padding: 1.1rem 1.2rem;
+}
+.grid { display: grid; gap: 1rem; }
+.grid.two { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+.grid.three { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+
+/* Location bar */
+.location-bar { display: flex; gap: .6rem; flex-wrap: wrap; align-items: center; }
+.location-bar input[type="search"] {
+  flex: 1 1 240px; padding: .6rem .8rem; border: 1px solid var(--line);
+  border-radius: 10px; font-size: 1rem; background: #fff; color: var(--ink);
+}
+.location-results {
+  position: absolute; z-index: 30; background: #fff; border: 1px solid var(--line);
+  border-radius: 10px; box-shadow: var(--shadow); margin-top: .25rem; width: min(420px, 90vw);
+  max-height: 260px; overflow: auto; display: none;
+}
+.location-results button {
+  display: block; width: 100%; text-align: left; border: 0; background: none;
+  padding: .55rem .8rem; font-size: .95rem; cursor: pointer; color: var(--ink);
+}
+.location-results button:hover, .location-results button:focus-visible { background: var(--brand-soft); }
+.search-wrap { position: relative; flex: 1 1 240px; display: flex; }
+.search-wrap input { width: 100%; }
+
+button.btn {
+  background: var(--brand); color: #fff; border: 0; border-radius: 10px;
+  padding: .6rem 1rem; font-size: .95rem; cursor: pointer; font-weight: 600;
+}
+button.btn:hover { background: var(--brand-dark); }
+button.btn.ghost { background: #fff; color: var(--brand-dark); border: 1px solid var(--brand); }
+button.btn.ghost:hover { background: var(--brand-soft); }
+button:disabled { opacity: .55; cursor: not-allowed; }
+
+/* AQI gauge */
+.aqi-hero { display: flex; gap: 1.4rem; align-items: center; flex-wrap: wrap; }
+.gauge {
+  --pct: 0; --band: #22c55e;
+  width: 168px; height: 168px; border-radius: 50%; flex: 0 0 auto;
+  background:
+    radial-gradient(closest-side, #fff 74%, transparent 75% 100%),
+    conic-gradient(var(--band) calc(var(--pct) * 1%), #e5edE9 0);
+  display: grid; place-items: center;
+}
+.gauge .num { font-size: 2.5rem; font-weight: 800; line-height: 1; }
+.gauge .cap { font-size: .72rem; color: var(--muted); letter-spacing: .06em; text-transform: uppercase; }
+.band-chip {
+  display: inline-block; padding: .18rem .65rem; border-radius: 999px;
+  color: #fff; font-weight: 700; font-size: .85rem;
+}
+.aqi-advice { max-width: 52ch; color: var(--muted); margin: .4rem 0 0; }
+.updated { font-size: .8rem; color: var(--muted); }
+
+/* Pollutants: 3 columns on desktop, 2 on narrow screens */
+#pollutants { grid-template-columns: repeat(3, 1fr); }
+@media (max-width: 560px) {
+  #pollutants { grid-template-columns: repeat(2, 1fr); }
+}
+.pollutant { text-align: center; padding: .7rem .4rem; }
+.pollutant .v { font-size: 1.25rem; font-weight: 700; }
+.pollutant .u { font-size: .72rem; color: var(--muted); }
+.pollutant .n { font-size: .82rem; color: var(--muted); margin-top: .15rem; }
+
+/* Forecast chart */
+.chart-wrap { overflow-x: auto; }
+canvas#forecast { width: 100%; min-width: 560px; height: 210px; display: block; }
+.chart-legend { font-size: .8rem; color: var(--muted); margin-top: .3rem; }
+
+/* Profile form */
+form.profile fieldset { border: 1px solid var(--line); border-radius: 10px; margin: 0 0 1rem; padding: .8rem 1rem 1rem; }
+form.profile legend { font-weight: 600; font-size: .92rem; padding: 0 .4rem; color: var(--brand-dark); }
+.checks { display: flex; flex-wrap: wrap; gap: .4rem 1.1rem; }
+.checks label { display: flex; gap: .4rem; align-items: center; font-size: .95rem; }
+.profile select, .profile input[type="number"] {
+  padding: .45rem .6rem; border: 1px solid var(--line); border-radius: 8px;
+  font-size: .95rem; background: #fff; color: var(--ink); min-width: 0;
+}
+.profile .row { display: flex; gap: 1rem; flex-wrap: wrap; align-items: end; }
+.profile .field { display: flex; flex-direction: column; gap: .25rem; font-size: .88rem; color: var(--muted); }
+
+/* Plan cards */
+.plan-list { margin: 0; padding-left: 1.1rem; }
+.plan-list li { margin-bottom: .5rem; }
+.swap { display: flex; gap: .7rem; align-items: flex-start; padding: .6rem 0; border-top: 1px dashed var(--line); }
+.swap:first-of-type { border-top: 0; }
+.swap input { margin-top: .3rem; }
+.swap .saving { font-weight: 700; color: var(--brand-dark); white-space: nowrap; }
+.swap .why { color: var(--muted); font-size: .88rem; margin: .15rem 0 0; }
+.est-note { font-size: .78rem; color: var(--muted); }
+
+/* Impact */
+.impact-num { font-size: 2rem; font-weight: 800; color: var(--brand-dark); }
+.impact-eq { color: var(--muted); font-size: .9rem; }
+
+/* Assistant */
+.chat-log { display: flex; flex-direction: column; gap: .6rem; max-height: 380px; overflow-y: auto; padding: .2rem; }
+.msg { max-width: 85%; padding: .55rem .8rem; border-radius: 12px; font-size: .95rem; white-space: pre-wrap; }
+.msg.user { align-self: flex-end; background: var(--brand); color: #fff; border-bottom-right-radius: 4px; }
+.msg.bot { align-self: flex-start; background: #eef4f1; border: 1px solid var(--line); border-bottom-left-radius: 4px; }
+.msg.meta { align-self: center; background: none; border: 0; color: var(--muted); font-size: .75rem; padding: 0; }
+.chat-input { display: flex; gap: .5rem; margin-top: .7rem; }
+.chat-input input {
+  flex: 1; padding: .6rem .8rem; border: 1px solid var(--line); border-radius: 10px; font-size: .95rem;
+}
+.provider-line { font-size: .78rem; color: var(--muted); margin-top: .35rem; }
+
+/* Settings dialog */
+dialog#settings { border: 1px solid var(--line); border-radius: var(--radius); padding: 1.2rem 1.4rem; max-width: 440px; width: 92vw; }
+dialog#settings::backdrop { background: rgba(18, 33, 28, .35); }
+dialog#settings label { display: block; font-size: .88rem; color: var(--muted); margin: .7rem 0 .25rem; }
+dialog#settings input, dialog#settings select {
+  width: 100%; padding: .5rem .6rem; border: 1px solid var(--line); border-radius: 8px; font-size: .95rem;
+}
+
+footer.site { border-top: 1px solid var(--line); background: #fff; }
+.footer-inner { max-width: 1080px; margin: 0 auto; padding: 1.2rem 1rem 2rem; color: var(--muted); font-size: .82rem; }
+.footer-inner a { color: var(--brand-dark); }
+
+.error-box {
+  background: #fef2f2; border: 1px solid #fecaca; color: #991b1b;
+  border-radius: 10px; padding: .7rem .9rem; margin: .8rem 0; display: none;
+}
+.hidden { display: none !important; }
+
+.gauge .src { font-size: .62rem; color: var(--muted); margin-top: .2rem; }
+
+@media (max-width: 640px) {
+  .aqi-hero { justify-content: center; text-align: center; }
+  .aqi-advice { max-width: none; }
+  nav.main { margin-left: 0; }
+}

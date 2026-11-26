@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="AirSaathi - a GenAI-powered Urban Air Quality Assistant. Live AQI, personalised low-emission routines, indoor air hacks and sustainable swaps with explained impact.">
+  <title>AirSaathi - Urban Air Quality Assistant</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='%230f766e'/%3E%3Cpath d='M9 18c2-4 5-6 7-6s5 2 7 6c-2 4-5 6-7 6s-5-2-7-6z' fill='%23ccfbf1'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="logo">
+        <svg width="26" height="26" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="14" fill="#0f766e"/><path d="M9 18c2-4 5-6 7-6s5 2 7 6c-2 4-5 6-7 6s-5-2-7-6z" fill="#ccfbf1"/></svg>
+        AirSaathi
+      </div>
+      <nav class="main" aria-label="Sections">
+        <a href="#dashboard">Dashboard</a>
+        <a href="#profile">Household</a>
+        <a href="#plan">My Plan</a>
+        <a href="#assistant">AI Assistant</a>
+        <a href="#impact">Impact</a>
+      </nav>
+      <button class="btn ghost" id="open-settings" type="button">AI Settings</button>
+    </div>
+  </header>
+
+  <main>
+    <section id="intro" aria-labelledby="intro-h">
+      <h1 id="intro-h">Beat the smog, one choice at a time.</h1>
+      <p class="lead">AirSaathi reads the live air over your city and builds a personal plan:
+        when to go out, how to keep indoor air clean, and which everyday swaps cut both
+        pollution and your exposure - with the impact of each choice explained.</p>
+      <div class="panel location-bar" role="search">
+        <div class="search-wrap">
+          <input type="search" id="city-input" placeholder="Search your city (e.g. Mysuru, Delhi, Bengaluru)"
+                 aria-label="Search city" autocomplete="off">
+          <div class="location-results" id="city-results" role="listbox" aria-label="Matching cities"></div>
+        </div>
+        <button class="btn" id="search-btn" type="button">Check air</button>
+        <button class="btn ghost" id="geo-btn" type="button">Use my location</button>
+      </div>
+      <div class="error-box" id="error-box" role="alert"></div>
+    </section>
+
+    <section id="dashboard" aria-labelledby="dash-h">
+      <h2 id="dash-h">Live air quality <span class="updated" id="where-when"></span></h2>
+      <div class="grid two">
+        <div class="panel">
+          <div class="aqi-hero">
+            <div class="gauge" id="gauge" role="img" aria-label="Current US AQI">
+              <div>
+                <div class="num" id="aqi-num">--</div>
+                <div class="cap">US AQI</div>
+                <div class="src">model estimate</div>
+              </div>
+            </div>
+            <div>
+              <span class="band-chip" id="band-chip">--</span>
+              <p class="aqi-advice" id="band-advice">Pick a city to see the live picture.</p>
+            </div>
+          </div>
+        </div>
+        <div class="panel">
+          <h3>Key pollutants (&micro;g/m&sup3;)</h3>
+          <div class="grid three" id="pollutants">
+            <div class="pollutant"><div class="v" id="pm25">--</div><div class="u">&micro;g/m&sup3;</div><div class="n">PM2.5</div></div>
+            <div class="pollutant"><div class="v" id="pm10">--</div><div class="u">&micro;g/m&sup3;</div><div class="n">PM10</div></div>
+            <div class="pollutant"><div class="v" id="no2">--</div><div class="u">&micro;g/m&sup3;</div><div class="n">NO&#8322;</div></div>
+            <div class="pollutant"><div class="v" id="o3">--</div><div class="u">&micro;g/m&sup3;</div><div class="n">Ozone</div></div>
+            <div class="pollutant"><div class="v" id="so2">--</div><div class="u">&micro;g/m&sup3;</div><div class="n">SO&#8322;</div></div>
+            <div class="pollutant"><div class="v" id="co">--</div><div class="u">&micro;g/m&sup3;</div><div class="n">CO</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="panel" style="margin-top:1rem">
+        <h3>Next 48 hours</h3>
+        <div class="chart-wrap"><canvas id="forecast" height="210" aria-label="Hourly US AQI forecast chart"></canvas></div>
+        <p class="chart-legend">Hourly US AQI forecast (model-based). The shaded band marks the lowest-AQI 2-hour stretch.</p>
+      </div>
+    </section>
+
+    <section id="profile" aria-labelledby="prof-h">
+      <h2 id="prof-h">Your household &amp; lifestyle</h2>
+      <form class="panel profile" id="profile-form">
+        <fieldset>
+          <legend>Who lives with you?</legend>
+          <div class="checks">
+            <label><input type="checkbox" id="p-children"> Young children</label>
+            <label><input type="checkbox" id="p-elderly"> Elders (60+)</label>
+            <label><input type="checkbox" id="p-asthma"> Asthma / respiratory condition</label>
+            <label><input type="checkbox" id="p-heart"> Heart condition</label>
+          </div>
+        </fieldset>
+        <fieldset>
+          <legend>Your typical day</legend>
+          <div class="row">
+            <label class="field">Commute mode
+              <select id="p-commute">
+                <option value="two_wheeler">Two-wheeler (petrol)</option>
+                <option value="car">Car (petrol, solo)</option>
+                <option value="auto">Auto-rickshaw</option>
+                <option value="bus">City bus</option>
+                <option value="metro">Metro / suburban rail</option>
+                <option value="cycle_walk">Cycle / walk</option>
+              </select>
+            </label>
+            <label class="field">One-way commute (km)
+              <input type="number" id="p-km" min="0" max="120" step="1" value="8">
+            </label>
+            <label class="field">Outdoor exercise
+              <select id="p-exercise">
+                <option value="morning">Morning</option>
+                <option value="evening">Evening</option>
+                <option value="none">Rarely / none</option>
+              </select>
+            </label>
+          </div>
+          <div class="checks" style="margin-top:.7rem">
+            <label><input type="checkbox" id="p-mask"> I have an N95/FFP2 mask</label>
+            <label><input type="checkbox" id="p-purifier"> I have a HEPA air purifier</label>
+          </div>
+        </fieldset>
+        <button class="btn" type="submit">Build my plan</button>
+      </form>
+    </section>
+
+    <section id="plan" aria-labelledby="plan-h">
+      <h2 id="plan-h">Your plan for today</h2>
+      <p class="lead" id="plan-risk">Save your household details to get a plan tuned to the live air.</p>
+      <div class="grid two">
+        <div class="panel">
+          <h3>Low-emission daily routine</h3>
+          <ul class="plan-list" id="routine-list"></ul>
+        </div>
+        <div class="panel">
+          <h3>Indoor air hacks</h3>
+          <ul class="plan-list" id="hacks-list"></ul>
+        </div>
+      </div>
+      <div class="panel" style="margin-top:1rem">
+        <h3>Sustainable swaps - tick the ones you adopt</h3>
+        <div id="swaps-list"></div>
+        <p class="est-note">Savings are estimates, all from one source on one basis: OECD/ITF (2020)
+          "Good to Go?", Figure 2 - life-cycle g CO&#8322;e per passenger-km at global-average occupancy:
+          petrol car ~155, two-wheeler (moped category) ~70, bus ~90, metro ~65. This prototype has no
+          comparable sourced factor for auto-rickshaws, so their savings are not quantified. These guide
+          comparison; they are
+          not measurements, and CO&#8322;e avoided is a climate benefit separate from your personal
+          pollution exposure.</p>
+      </div>
+    </section>
+
+    <section id="assistant" aria-labelledby="ai-h">
+      <h2 id="ai-h">Ask Saathi, the AI assistant</h2>
+      <div class="panel">
+        <div class="chat-log" id="chat-log" aria-live="polite">
+          <div class="msg bot">Namaste! I can see the live air once you pick a city, and your household
+            profile once you save it. Ask me things like "Is 6 AM jogging OK for my father today?" or
+            "How do I keep my baby's room air clean tonight?"</div>
+        </div>
+        <form class="chat-input" id="chat-form">
+          <input type="text" id="chat-text" placeholder="Ask about today's air, routines, masks, purifiers..."
+                 aria-label="Ask the AI assistant" required>
+          <button class="btn" id="chat-send" type="submit">Ask</button>
+        </form>
+        <p class="provider-line" id="provider-line">Assistant backend: not used yet. Answers come from a live
+          generative model grounded in your current AQI and profile - on-device browser AI, or your own Gemini
+          key in AI Settings.</p>
+      </div>
+    </section>
+
+    <section id="impact" aria-labelledby="impact-h">
+      <h2 id="impact-h">Your weekly impact</h2>
+      <div class="panel">
+        <div class="impact-num"><span id="impact-num">0</span> <span id="impact-unit">g CO&#8322;e</span></div>
+        <p class="impact-eq" id="impact-eq">Adopt a swap above to see the estimated weekly saving and what it means.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site">
+    <div class="footer-inner">
+      <p><strong>AirSaathi</strong> - built for PromptWars Virtual, Challenge 06: Urban Air Quality Assistant.</p>
+      <p>Live air-quality data: <a href="https://open-meteo.com/en/docs/air-quality-api" rel="noopener">Open-Meteo Air
+        Quality API</a> (CAMS / satellite and monitor based). AQI shown on the US EPA scale. Emission savings are
+        labelled estimates, not measurements. Health guidance follows US EPA AQI action tables (EPA-456/F-14-002) and is not
+        medical advice - follow your doctor's plan for asthma or heart conditions.</p>
+    </div>
+  </footer>
+
+  <dialog id="settings" aria-labelledby="settings-h">
+    <h3 id="settings-h">AI assistant settings</h3>
+    <label for="s-provider">Backend</label>
+    <select id="s-provider">
+      <option value="auto">Auto - on-device AI first, then my key</option>
+      <option value="nano">Browser AI - Gemini Nano (on-device, supported browsers)</option>
+      <option value="gemini">Google Gemini API - my own key</option>
+    </select>
+    <label for="s-key">Gemini API key (stored only in this browser)</label>
+    <input type="password" id="s-key" placeholder="AI Studio free-tier key" autocomplete="off">
+    <label for="s-model">Gemini model</label>
+    <input type="text" id="s-model" value="gemini-2.5-flash">
+    <div style="margin-top:1rem; display:flex; gap:.6rem; justify-content:flex-end">
+      <button class="btn ghost" id="settings-close" type="button">Close</button>
+      <button class="btn" id="settings-save" type="button">Save</button>
+    </div>
+  </dialog>
+
+  <script src="engine.js"></script>
+  <script src="ai.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
