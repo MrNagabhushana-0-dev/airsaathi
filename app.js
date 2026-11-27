@@ -398,13 +398,20 @@
     loadAir();
   }
 
-  /* Test/demo hook: ?scrollto=<section id> jumps straight to a section after load. */
-  var scrollTarget = new URLSearchParams(location.search).get('scrollto');
+  /* Test/demo hooks: ?scrollto=<section id> jumps straight to a section after load;
+     ?hide=<section id> removes a section (used to capture inner sections headlessly). */
+  var qsBoot = new URLSearchParams(location.search);
+  var scrollTarget = qsBoot.get('scrollto');
   if (scrollTarget) {
     setTimeout(function () {
       var el = $(scrollTarget);
       if (el) el.scrollIntoView({ behavior: 'auto' });
     }, 900);
+  }
+  var hideTarget = qsBoot.get('hide');
+  if (hideTarget) {
+    var hel = $(hideTarget);
+    if (hel) hel.style.display = 'none';
   }
 
   /* Bridge for globe.js: lets the 3D globe select places and read the shared state. */
