@@ -326,6 +326,13 @@ import { feature } from 'topojson-client';
     if (t) setTimeout(function () { t.focus(); }, reducedMotion ? 0 : 600);
   });
 
+  /* On mobile the panel is a fixed bottom sheet: hide it once the hero scrolls away. */
+  if ('IntersectionObserver' in window) {
+    new IntersectionObserver(function (entries) {
+      panel.classList.toggle('gp-away', !entries[0].isIntersecting);
+    }, { threshold: 0.05 }).observe(document.getElementById('globe-hero'));
+  }
+
   /* Restore the saved place (search/geo selections dispatch the event themselves) */
   if (window.AirSaathi && window.AirSaathi.snapshot) {
     var snap = window.AirSaathi.snapshot();
