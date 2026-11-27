@@ -88,7 +88,7 @@
         <div class="legend-row"><i style="background:#ef4444"></i>151&ndash;200 Unhealthy</div>
         <div class="legend-row"><i style="background:#a855f7"></i>201&ndash;300 Very unhealthy</div>
         <div class="legend-row"><i style="background:#b91c1c"></i>301+ Hazardous</div>
-        <div class="legend-note">Each dot is a real CAMS model value at that point (US AQI, hourly model resolution). This device refreshes the snapshot every 3 hours.</div>
+        <div class="legend-note">Land dots are coloured by blending the nearest points of a coarse 24&deg; grid of CAMS model values (US AQI, hourly model resolution), so colours between grid points are interpolated, not measured. The larger bright dots are the grid points themselves. Tap for the exact point. This device refreshes at most every 3 hours.</div>
       </div>
 
       <aside class="globe-panel hidden" id="globe-panel" aria-live="polite" aria-label="Selected place air quality">
@@ -197,7 +197,7 @@
 
     <section id="plan" aria-labelledby="plan-h">
       <h2 id="plan-h">Your plan for today</h2>
-      <p class="lead" id="plan-risk">Save your household details to get a plan tuned to the live air.</p>
+      <p class="lead" id="plan-risk">Save your household details to get a plan tuned to the current model air.</p>
       <div class="grid two">
         <div class="panel">
           <h3>Low-emission daily routine</h3>
