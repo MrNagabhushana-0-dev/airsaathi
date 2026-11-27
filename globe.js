@@ -135,6 +135,36 @@ import { feature } from 'topojson-client';
     .then(function (topo) {
       var land = feature(topo, topo.objects.land);
       var SAMPLES = 20000, kept = [];
+      /* Land mask: rasterise the land polygons once onto an equirectangular canvas, then look dots up.
+         The exact spherical point-in-polygon test took ~10 s on first load and left the globe blank. */
+      var MW = 1440, MH = 720, maskData = null;
+      try {
+        var mc = document.createElement('canvas'); mc.width = MW; mc.height = MH;
+        var mx = mc.getContext('2d', { willReadFrequently: true });
+        mx.fillStyle = '#fff';
+        var geoms = land.type === 'FeatureCollection' ? land.features.map(function (f) { return f.geometry; }) : [land.geometry || land];
+        geoms.forEach(function (gm) {
+          var polys = gm.type === 'Polygon' ? [gm.coordinates] : gm.type === 'MultiPolygon' ? gm.coordinates : [];
+          polys.forEach(function (poly) {
+            mx.beginPath();
+            poly.forEach(function (ringc) {
+              ringc.forEach(function (pt, k) {
+                var px = (pt[0] + 180) / 360 * MW, py = (90 - pt[1]) / 180 * MH;
+                if (k === 0) mx.moveTo(px, py); else mx.lineTo(px, py);
+              });
+              mx.closePath();
+            });
+            mx.fill('evenodd');
+          });
+        });
+        maskData = mx.getImageData(0, 0, MW, MH).data;
+      } catch (e) { maskData = null; }
+      function isLand(lon, lat) {
+        if (!maskData) return geoContains(land, [lon, lat]);
+        var px = Math.min(MW - 1, Math.max(0, Math.floor((lon + 180) / 360 * MW)));
+        var py = Math.min(MH - 1, Math.max(0, Math.floor((90 - lat) / 180 * MH)));
+        return maskData[(py * MW + px) * 4 + 3] > 127;
+      }
       var ga = Math.PI * (3 - Math.sqrt(5));
       for (var i = 0; i < SAMPLES; i++) {
         var y = 1 - (i / (SAMPLES - 1)) * 2;
@@ -143,7 +173,7 @@ import { feature } from 'topojson-client';
         var x = Math.cos(th) * rad, z = Math.sin(th) * rad;
         var lat = Math.asin(THREE.MathUtils.clamp(y, -1, 1)) * 180 / Math.PI;
         var lon = Math.atan2(z, x) * 180 / Math.PI;
-        if (geoContains(land, [lon, lat])) kept.push(x * 1.002, y * 1.002, z * 1.002);
+        if (isLand(lon, lat)) kept.push(x * 1.002, y * 1.002, z * 1.002);
       }
       var g = new THREE.BufferGeometry();
       g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(kept), 3));
@@ -152,7 +182,7 @@ import { feature } from 'topojson-client';
       g.setAttribute('color', new THREE.BufferAttribute(baseCol, 3));
       landGeom = g;
       globe.add(new THREE.Points(g, new THREE.PointsMaterial({
-        size: 0.013, sizeAttenuation: true, map: dotTex, vertexColors: true,
+        size: 0.026, sizeAttenuation: true, map: dotTex, vertexColors: true,
         alphaTest: 0.28, transparent: true, opacity: 0.95
       })));
       applyField();
@@ -255,7 +285,7 @@ import { feature } from 'topojson-client';
     g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(pos), 3));
     g.setAttribute('color', new THREE.BufferAttribute(new Float32Array(col), 3));
     globe.add(new THREE.Points(g, new THREE.PointsMaterial({
-      size: 0.028, sizeAttenuation: true, vertexColors: true, map: dotTex,
+      size: 0.05, sizeAttenuation: true, vertexColors: true, map: dotTex,
       transparent: true, opacity: 0.9, depthWrite: false,
       blending: THREE.AdditiveBlending
     })));
