@@ -100,10 +100,31 @@
   }
 
   /* ---------- Live air quality (Open-Meteo, free, keyless) ---------- */
+  var airReqSeq = 0;  /* last-tap-wins guard: stale in-flight responses are ignored */
+
+  function airCacheKey(p) { return p.lat.toFixed(2) + ',' + p.lon.toFixed(2); }
+
+  function showAirError(msg) {
+    /* Error with an explicit retry, so a failed load never leaves the UI hung. */
+    var box = $('error-box');
+    box.textContent = '';
+    box.appendChild(document.createTextNode(msg + ' '));
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.textContent = 'Retry';
+    btn.style.cssText = 'margin-left:8px;padding:2px 12px;border-radius:6px;border:1px solid currentColor;' +
+      'background:transparent;color:inherit;cursor:pointer;font:inherit;';
+    btn.addEventListener('click', function () { loadAir(); });
+    box.appendChild(btn);
+    box.style.display = 'block';
+    document.dispatchEvent(new CustomEvent('airsaathi:air-error', { detail: { message: msg } }));
+  }
+
   function loadAir() {
     if (!state.place) return;
     showError('');
     var p = state.place;
+    var seq = ++airReqSeq;
     var url = 'https://air-quality-api.open-meteo.com/v1/air-quality?latitude=' + p.lat +
       '&longitude=' + p.lon +
       '&current=us_aqi,pm2_5,pm10,nitrogen_dioxide,ozone,sulphur_dioxide,carbon_monoxide' +
@@ -114,18 +135,39 @@
         return r.json();
       })
       .then(function (data) {
+        if (seq !== airReqSeq) return;  /* a newer place was picked while this loaded */
         state.current = data.current;
         var times = (data.hourly && data.hourly.time) || [];
         var aqis = (data.hourly && data.hourly.us_aqi) || [];
         state.hourly = times.map(function (t, i) { return { time: t, aqi: aqis[i] }; })
           .filter(function (h) { return typeof h.aqi === 'number'; });
+        saveJSON('airsaathi.airCache', { key: airCacheKey(p), place: p, t: Date.now(),
+          current: state.current, hourly: state.hourly });
         renderDashboard();
         rebuildPlan();
         document.dispatchEvent(new CustomEvent('airsaathi:air', {
           detail: { place: state.place, current: state.current, hourly: state.hourly }
         }));
       })
-      .catch(function (e) { showError('Could not load live air data: ' + e.message); });
+      .catch(function (e) {
+        if (seq !== airReqSeq) return;
+        /* Offline / service down: fall back to this place's cached snapshot if we have one. */
+        var cached = loadJSON('airsaathi.airCache', null);
+        if (cached && cached.key === airCacheKey(p) && cached.current) {
+          state.current = cached.current;
+          state.hourly = cached.hourly || [];
+          renderDashboard();
+          rebuildPlan();
+          document.dispatchEvent(new CustomEvent('airsaathi:air', {
+            detail: { place: state.place, current: state.current, hourly: state.hourly }
+          }));
+          var ageMin = Math.max(1, Math.round((Date.now() - cached.t) / 60000));
+          showAirError('Could not refresh the model data (' + e.message + '). Showing the snapshot cached on this device, ' +
+            ageMin + ' min old - check the model hour before acting on it.');
+        } else {
+          showAirError('Could not load live air data: ' + e.message + '.');
+        }
+      });
   }
 
   function renderDashboard() {
