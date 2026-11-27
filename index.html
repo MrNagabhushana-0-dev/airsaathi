@@ -36,6 +36,7 @@
         <a href="#assistant">AI Assistant</a>
         <a href="#impact">Impact</a>
       </nav>
+      <button class="btn ghost nav-toggle" id="nav-toggle" type="button" aria-label="Open menu" aria-expanded="false">&#9776;</button>
       <button class="btn ghost" id="open-settings" type="button">AI Settings</button>
     </div>
   </header>
@@ -61,10 +62,11 @@
         </div>
         <div class="error-box" id="error-box" role="alert"></div>
         <p class="hint">Drag to spin &middot; Scroll or pinch to zoom &middot; Tap the globe for its air</p>
+        <button class="btn ghost globe-reset" id="globe-reset" type="button">&#10227; Reset view</button>
       </div>
 
       <div class="globe-legend" id="globe-legend">
-        <div class="legend-title">Live global snapshot <span class="legend-time" id="legend-time">loading&hellip;</span></div>
+        <div class="legend-title">Global model snapshot <span class="legend-time" id="legend-time">loading&hellip;</span></div>
         <div class="legend-row"><i style="background:#22c55e"></i>0&ndash;50 Good</div>
         <div class="legend-row"><i style="background:#eab308"></i>51&ndash;100 Moderate</div>
         <div class="legend-row"><i style="background:#f97316"></i>101&ndash;150 USG</div>
@@ -97,7 +99,7 @@
     </section>
 
     <section id="dashboard" aria-labelledby="dash-h">
-      <h2 id="dash-h">Live air quality <span class="updated" id="where-when"></span></h2>
+      <h2 id="dash-h">Current air quality <span class="cap-note">(CAMS model estimates)</span> <span class="updated" id="where-when"></span></h2>
       <div class="grid two">
         <div class="panel">
           <div class="aqi-hero">
@@ -236,9 +238,9 @@
   <footer class="site">
     <div class="footer-inner">
       <p><strong>AirSaathi</strong> - built for PromptWars Virtual, Challenge 06: Urban Air Quality Assistant.</p>
-      <p>Live air-quality data: <a href="https://open-meteo.com/en/docs/air-quality-api" rel="noopener">Open-Meteo Air
-        Quality API</a> (CAMS / satellite and monitor based model, values are estimates, refreshed hourly; the
-        global dot layer is one batched request, cached for 3 hours). Place names:
+      <p>Air-quality data: <a href="https://open-meteo.com/en/docs/air-quality-api" rel="noopener">Open-Meteo Air
+        Quality API</a> (CAMS / satellite and monitor based model, values are estimates, hourly model resolution; the
+        global dot layer is one batched request, cached for 3 hours on this device). Place names:
         <a href="https://www.bigdatacloud.com/free-api/free-reverse-geocode-to-city-api" rel="noopener">BigDataCloud
         reverse geocoder</a>. AQI shown on the US EPA scale. Emission savings are
         labelled estimates, not measurements. Health guidance follows US EPA AQI action tables (EPA-456/F-14-002) and is not
