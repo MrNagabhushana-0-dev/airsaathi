@@ -427,7 +427,7 @@
       .catch(function (err) {
         thinking.remove();
         addMsg('bot', err.message +
-          ' The dashboard, plan and impact tracker keep working on live data meanwhile.');
+          ' The dashboard, plan and impact tracker keep working on model data meanwhile.');
       })
       .finally(function () { $('chat-send').disabled = false; });
   });
