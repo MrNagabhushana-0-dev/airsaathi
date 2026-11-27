@@ -47,6 +47,15 @@ nav.main a {
   padding: .35rem .7rem; border-radius: 999px; transition: color .2s, background .2s;
 }
 nav.main a:hover, nav.main a:focus-visible { background: var(--brand-soft); color: var(--ink); }
+.nav-toggle { display: none; font-size: 1.05rem; padding: .45rem .75rem; }
+
+/* Readability scrims over the globe */
+#globe-hero::before {
+  content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background: linear-gradient(90deg, rgba(5, 7, 13, .92) 0%, rgba(5, 7, 13, .62) 32%, rgba(5, 7, 13, .12) 58%, transparent 72%);
+}
+.cap-note { font-size: .8rem; color: var(--muted); font-weight: 500; }
+.globe-reset { position: absolute; right: 1.1rem; bottom: 1.1rem; z-index: 5; font-size: .82rem; padding: .45rem .8rem; }
 
 main { max-width: 1120px; margin: 0 auto; padding: 0 1rem 4rem; }
 section { margin-bottom: 2.5rem; }
@@ -147,9 +156,23 @@ p.lead { color: var(--muted); max-width: 58ch; margin-top: 0; }
 .gp-actions .btn { flex: 1 1 auto; font-size: .85rem; padding: .5rem .7rem; }
 
 @media (max-width: 760px) {
+  .nav-toggle { display: inline-block; margin-left: auto; }
+  nav.main {
+    display: none; position: absolute; top: 100%; left: 0; right: 0;
+    flex-direction: column; gap: 0; margin: 0;
+    background: rgba(5, 7, 13, .97); border-bottom: 1px solid var(--line);
+    padding: .4rem .8rem .8rem; z-index: 39;
+  }
+  nav.main.open { display: flex; }
+  nav.main a { padding: .6rem .4rem; font-size: 1rem; }
+  #open-settings { margin-left: 0; }
   #globe-hero { align-items: flex-start; }
-  .hero-copy { padding: 2.2rem 0 4rem; }
+  #globe-hero::before {
+    background: linear-gradient(180deg, rgba(5, 7, 13, .9) 0%, rgba(5, 7, 13, .68) 40%, rgba(5, 7, 13, .25) 62%, transparent 80%);
+  }
+  .hero-copy { padding: 2rem 0 4rem; }
   .globe-legend { display: none; }
+  .globe-reset { top: .8rem; right: .8rem; bottom: auto; }
   .globe-panel {
     position: fixed; left: .8rem; right: .8rem; bottom: .8rem; top: auto;
     transform: none; width: auto; z-index: 60;
@@ -288,7 +311,6 @@ footer.site { border-top: 1px solid var(--line); background: var(--bg-soft); }
 @media (max-width: 640px) {
   .aqi-hero { justify-content: center; text-align: center; }
   .aqi-advice { max-width: none; }
-  nav.main { margin-left: 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {
