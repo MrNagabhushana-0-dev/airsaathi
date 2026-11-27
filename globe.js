@@ -235,6 +235,21 @@ import { feature } from 'topojson-client';
       if (legendTime) legendTime.textContent = cached.modelTime ? cached.modelTime + ' UTC' : 'cached snapshot';
       return;
     }
+    /* Budget guard: each grid coordinate counts as one Open-Meteo call, so a device that keeps
+       cold-loading (cache cleared, private tabs) stops after ~4 loads/day (~420 of the 10k/day free
+       allowance, leaving room for taps) and shows the last snapshot, however old, instead. */
+    var BKEY = 'airsaathi.gridLoads', day = new Date().toISOString().slice(0, 10), bud = null;
+    try { bud = JSON.parse(localStorage.getItem(BKEY) || 'null'); } catch (e) {}
+    if (!bud || bud.day !== day) bud = { day: day, n: 0 };
+    if (bud.n >= 4) {
+      if (cached && cached.values && cached.values.length) {
+        buildAqiLayer(cached.values);
+        if (legendTime) legendTime.textContent = (cached.modelTime ? cached.modelTime + ' UTC' : 'cached snapshot') + ' (daily refresh limit reached)';
+      } else if (legendTime) legendTime.textContent = 'dot layer paused today to respect the free data limit - tap the globe for a point reading';
+      return;
+    }
+    bud.n++;
+    try { localStorage.setItem(BKEY, JSON.stringify(bud)); } catch (e) {}
     var lats = [], lons = [];
     for (var la = -72; la <= 72; la += 24) {
       for (var lo = -180; lo < 180; lo += 24) { lats.push(la); lons.push(lo); }
@@ -254,6 +269,11 @@ import { feature } from 'topojson-client';
         if (legendTime) legendTime.textContent = modelTime ? modelTime + ' UTC' : 'live snapshot';
       })
       .catch(function () {
+        if (cached && cached.values && cached.values.length) {
+          buildAqiLayer(cached.values);
+          if (legendTime) legendTime.textContent = (cached.modelTime ? cached.modelTime + ' UTC' : 'cached snapshot') + ' (could not refresh)';
+          return;
+        }
         if (legendTime) legendTime.textContent = 'dot layer unavailable - tap the globe for a live point reading';
       });
   }
