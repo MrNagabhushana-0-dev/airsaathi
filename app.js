@@ -315,7 +315,29 @@
       box.appendChild(row);
     });
   }
+  function renderPotential() {
+    /* Potential (not adopted) saving, from the user's own commute inputs. Swaps can overlap,
+       so we quote only the single largest quantified swap rather than summing alternatives. */
+    var el = $('impact-potential');
+    if (!el) return;
+    if (!state.plan || !state.profile) {
+      el.textContent = 'Save your household details above and this will show what your own commute swaps could save each week.';
+      return;
+    }
+    var best = null;
+    state.plan.swaps.forEach(function (s) {
+      if (typeof s.saving === 'number' && s.saving > 0 && (!best || s.saving > best.saving)) best = s;
+    });
+    if (!best) {
+      el.textContent = 'Potential: none of the swaps for your commute input has a sourced saving figure, so none is quoted.';
+      return;
+    }
+    el.textContent = 'Potential, not yet adopted: your largest quantified swap ("' + best.action + '") could save about ' +
+      best.saving.toLocaleString() + ' g CO2e a week for a ' + state.profile.commuteKm +
+      ' km daily commute (estimate, from OECD/ITF 2020 factors). Tick swaps above to count what you adopt.';
+  }
   function renderImpact() {
+    renderPotential();
     if (!state.plan) return;
     var total = 0, adopted = 0, unquantified = 0;
     state.plan.swaps.forEach(function (s) {
@@ -481,6 +503,8 @@
     var hel = $(hideTarget);
     if (hel) hel.style.display = 'none';
   }
+
+  renderPotential();
 
   /* Bridge for globe.js: lets the 3D globe select places and read the shared state. */
   window.AirSaathi = {
