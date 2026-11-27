@@ -142,10 +142,17 @@
     g.style.setProperty('--pct', pct);
     g.style.setProperty('--band', band.color);
     g.setAttribute('aria-label', 'Current US AQI ' + aqi + ', ' + band.label);
-    $('where-when').textContent = ' - ' + state.place.name +
+  function fmtLocal(iso) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(iso || '');
+    if (!m) return iso || '';
+    var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    var h = +m[4], ap = h < 12 ? 'AM' : 'PM';
+    h = h % 12 || 12;
+    return months[+m[2] - 1] + ' ' + (+m[3]) + ', ' + h + ':' + m[5] + ' ' + ap;
+  }
+  $('where-when').textContent = ' - ' + state.place.name +
       (state.place.admin ? ', ' + state.place.admin : '') +
-      ', updated ' + new Date(c.time).toLocaleString(undefined,
-        { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
+      ' · model hour ' + fmtLocal(c.time) + ' (place local time)';
     setText('pm25', c.pm2_5); setText('pm10', c.pm10); setText('no2', c.nitrogen_dioxide);
     setText('o3', c.ozone); setText('so2', c.sulphur_dioxide); setText('co', c.carbon_monoxide);
     drawChart();
@@ -396,6 +403,22 @@
     state.place = savedPlace;
     $('city-input').value = savedPlace.name + (savedPlace.admin ? ', ' + savedPlace.admin : '');
     loadAir();
+  }
+
+  /* Mobile nav toggle */
+  var navToggle = $('nav-toggle');
+  if (navToggle) {
+    navToggle.addEventListener('click', function () {
+      var nav = document.querySelector('nav.main');
+      var open = nav.classList.toggle('open');
+      navToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+    document.querySelectorAll('nav.main a').forEach(function (a) {
+      a.addEventListener('click', function () {
+        document.querySelector('nav.main').classList.remove('open');
+        navToggle.setAttribute('aria-expanded', 'false');
+      });
+    });
   }
 
   /* Test/demo hooks: ?scrollto=<section id> jumps straight to a section after load;
