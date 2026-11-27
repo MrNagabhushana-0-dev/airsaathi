@@ -419,7 +419,7 @@
       .then(function (res) {
         thinking.remove();
         addMsg('bot', res.text);
-        addMsg('meta', 'Answered by ' + res.provider + ', grounded in the model AQI for your selected place and your saved household details.');
+        addMsg('meta', 'Answered by ' + res.provider + ', grounded in the model AQI for your selected place' + (state.profile ? ' and your saved household details' : '') + '.');
         $('provider-line').textContent = 'Assistant backend: ' + res.provider + '.';
         state.chat.push({ role: 'user', content: text }, { role: 'assistant', content: res.text });
         state.chat = state.chat.slice(-8);
