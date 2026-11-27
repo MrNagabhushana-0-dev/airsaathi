@@ -104,7 +104,7 @@
 
   function airCacheKey(p) { return p.lat.toFixed(2) + ',' + p.lon.toFixed(2); }
 
-  function showAirError(msg) {
+  function showAirError(msg, keepPanel) {
     /* Error with an explicit retry, so a failed load never leaves the UI hung. */
     var box = $('error-box');
     box.textContent = '';
@@ -117,7 +117,7 @@
     btn.addEventListener('click', function () { loadAir(); });
     box.appendChild(btn);
     box.style.display = 'block';
-    document.dispatchEvent(new CustomEvent('airsaathi:air-error', { detail: { message: msg } }));
+    if (!keepPanel) document.dispatchEvent(new CustomEvent('airsaathi:air-error', { detail: { message: msg } }));
   }
 
   function loadAir() {
@@ -153,7 +153,7 @@
         if (seq !== airReqSeq) return;
         /* Offline / service down: fall back to this place's cached snapshot if we have one. */
         var cached = loadJSON('airsaathi.airCache', null);
-        if (cached && cached.key === airCacheKey(p) && cached.current) {
+        if (cached && cached.key === airCacheKey(p) && cached.current && Date.now() - cached.t < 12 * 3600 * 1000) {
           state.current = cached.current;
           state.hourly = cached.hourly || [];
           renderDashboard();
@@ -163,7 +163,7 @@
           }));
           var ageMin = Math.max(1, Math.round((Date.now() - cached.t) / 60000));
           showAirError('Could not refresh the model data (' + e.message + '). Showing the snapshot cached on this device, ' +
-            ageMin + ' min old - check the model hour before acting on it.');
+            ageMin + ' min old - check the model hour before acting on it.', true);
         } else {
           showAirError('Could not load live air data: ' + e.message + '.');
         }
