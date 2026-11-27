@@ -38,7 +38,19 @@ import { feature } from 'topojson-client';
   var renderer;
   try {
     renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
-  } catch (e) { wrap.style.display = 'none'; return; }
+  } catch (e) {
+    /* WebGL unavailable (old device, disabled GPU, corporate lockdown): keep the rest of
+       the product usable and say so, instead of a blank hero. The note goes outside
+       #globe-wrap because that element is aria-hidden. */
+    wrap.style.display = 'none';
+    var note = document.createElement('p');
+    note.textContent = 'The 3D globe needs WebGL, which this browser has turned off. ' +
+      'Everything else works: use the search box or "Use my location" above to pick a place.';
+    note.style.cssText = 'max-width:340px;margin:24px 0;padding:14px 16px;border:1px solid #334155;' +
+      'border-radius:12px;color:#cbd5e1;background:rgba(15,23,42,.8);font-size:14px;line-height:1.5;';
+    wrap.parentNode.insertBefore(note, wrap.nextSibling);
+    return;
+  }
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
 
@@ -192,7 +204,10 @@ import { feature } from 'topojson-client';
   var resetBtn = document.getElementById('globe-reset');
   if (resetBtn) resetBtn.addEventListener('click', resetView);
 
-  /* Global AQI dot layer: one batched request, cached 3 hours */
+  /* Global AQI dot layer: one batched HTTP request, cached 3 hours on this device.
+     Quota note (Open-Meteo, per maintainer): each coordinate in a batch multiplies the
+     API-call count, so this grid is ~105 calls against the visitor's own free-tier
+     budget (10k/day, non-commercial) - about 1% per cold load, refreshed at most 8x/day. */
   var legendTime = document.getElementById('legend-time');
   function buildAqiLayer(values) {
     var pos = [], col = [];
@@ -329,6 +344,14 @@ import { feature } from 'topojson-client';
     $('gp-band').style.background = band.css;
     $('gp-pm25').textContent = typeof d.current.pm2_5 === 'number' ? d.current.pm2_5.toFixed(1) : '--';
     $('gp-time').textContent = d.current.time ? 'CAMS model hour · ' + d.current.time.replace('T', ' ') + ' (place local time)' : '';
+  });
+  document.addEventListener('airsaathi:air-error', function () {
+    /* Never leave the panel stuck on "loading": mark the reading unavailable;
+       the error box next to it carries the message and the Retry button. */
+    $('gp-aqi').textContent = '--';
+    $('gp-band').textContent = 'unavailable';
+    $('gp-band').style.background = '#475569';
+    $('gp-time').textContent = 'Could not load this reading - see the notice above for Retry.';
   });
   $('gp-close').addEventListener('click', function () { panel.classList.add('hidden'); });
   $('gp-goto-dash').addEventListener('click', function () {
