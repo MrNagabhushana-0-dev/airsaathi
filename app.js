@@ -326,13 +326,18 @@
     }
     var best = null;
     state.plan.swaps.forEach(function (s) {
+      if (state.adopted.indexOf(s.action) >= 0) return;
       if (typeof s.saving === 'number' && s.saving > 0 && (!best || s.saving > best.saving)) best = s;
     });
+    if (!best && state.adopted.length) {
+      el.textContent = 'Every swap with a sourced saving figure is marked adopted. The total above is your estimated weekly saving.';
+      return;
+    }
     if (!best) {
       el.textContent = 'Potential: none of the swaps for your commute input has a sourced saving figure, so none is quoted.';
       return;
     }
-    el.textContent = 'Potential, not yet adopted: your largest quantified swap ("' + best.action + '") could save about ' +
+    el.textContent = 'Potential, not yet adopted: your largest remaining quantified swap ("' + best.action + '") could save about ' +
       best.saving.toLocaleString() + ' g CO2e a week for a ' + state.profile.commuteKm +
       ' km daily commute (estimate, from OECD/ITF 2020 factors). Tick swaps above to count what you adopt.';
   }
