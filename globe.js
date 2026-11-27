@@ -147,10 +147,15 @@ import { feature } from 'topojson-client';
       }
       var g = new THREE.BufferGeometry();
       g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(kept), 3));
+      var baseCol = new Float32Array(kept.length), bc = new THREE.Color(0x9fd4ef);
+      for (var q = 0; q < kept.length; q += 3) { baseCol[q] = bc.r; baseCol[q + 1] = bc.g; baseCol[q + 2] = bc.b; }
+      g.setAttribute('color', new THREE.BufferAttribute(baseCol, 3));
+      landGeom = g;
       globe.add(new THREE.Points(g, new THREE.PointsMaterial({
-        color: 0x9fd4ef, size: 0.013, sizeAttenuation: true, map: dotTex,
+        size: 0.013, sizeAttenuation: true, map: dotTex, vertexColors: true,
         alphaTest: 0.28, transparent: true, opacity: 0.95
       })));
+      applyField();
     })
     .catch(function () { /* base sphere alone still works */ });
 
@@ -209,7 +214,36 @@ import { feature } from 'topojson-client';
      API-call count, so this grid is ~105 calls against the visitor's own free-tier
      budget (10k/day, non-commercial) - about 1% per cold load, refreshed at most 8x/day. */
   var legendTime = document.getElementById('legend-time');
+  var landGeom = null, gridValues = null;
+  /* Colour each land dot from the real model grid: inverse-distance blend of the 3 nearest
+     grid points (24 deg spacing), then the AQI band colour. This is an interpolation of model
+     values, not a measurement at that dot - the legend says so; tap gives the exact point. */
+  function applyField() {
+    if (!landGeom || !gridValues) return;
+    var pts = gridValues.filter(function (v) { return typeof v.aqi === 'number'; }).map(function (v) {
+      var p = llToVec3(v.lat, v.lon, 1); return { x: p.x, y: p.y, z: p.z, aqi: v.aqi };
+    });
+    if (pts.length < 3) return;
+    var pos = landGeom.getAttribute('position'), col = landGeom.getAttribute('color'), n = pos.count;
+    for (var i = 0; i < n; i++) {
+      var x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i), l = Math.sqrt(x * x + y * y + z * z);
+      x /= l; y /= l; z /= l;
+      var b = [{ d: 9, a: 0 }, { d: 9, a: 0 }, { d: 9, a: 0 }];
+      for (var j = 0; j < pts.length; j++) {
+        var d = 1 - (x * pts[j].x + y * pts[j].y + z * pts[j].z);
+        if (d < b[2].d) { b[2] = { d: d, a: pts[j].aqi }; if (b[2].d < b[1].d) { var t1 = b[1]; b[1] = b[2]; b[2] = t1; } if (b[1].d < b[0].d) { var t0 = b[0]; b[0] = b[1]; b[1] = t0; } }
+      }
+      var ws = 0, av = 0;
+      for (var k = 0; k < 3; k++) { var w = 1 / (b[k].d + 0.002); ws += w; av += w * b[k].a; }
+      var c = new THREE.Color(bandFor(av / ws).color);
+      col.setXYZ(i, c.r, c.g, c.b);
+    }
+    col.needsUpdate = true;
+  }
   function buildAqiLayer(values) {
+    gridValues = values; applyField();
+    var missing = values.filter(function (v) { return typeof v.aqi !== 'number'; }).length;
+    if (missing) setTimeout(function () { if (legendTime) legendTime.textContent += ' - ' + missing + ' of ' + values.length + ' grid points had no model value'; }, 0);
     var pos = [], col = [];
     values.forEach(function (v) {
       if (typeof v.aqi !== 'number') return;
@@ -266,7 +300,7 @@ import { feature } from 'topojson-client';
         });
         try { localStorage.setItem(KEY, JSON.stringify({ t: Date.now(), modelTime: modelTime, values: values })); } catch (e) {}
         buildAqiLayer(values);
-        if (legendTime) legendTime.textContent = modelTime ? modelTime + ' UTC' : 'live snapshot';
+        if (legendTime) legendTime.textContent = modelTime ? modelTime + ' UTC' : 'model snapshot';
       })
       .catch(function () {
         if (cached && cached.values && cached.values.length) {
@@ -274,7 +308,7 @@ import { feature } from 'topojson-client';
           if (legendTime) legendTime.textContent = (cached.modelTime ? cached.modelTime + ' UTC' : 'cached snapshot') + ' (could not refresh)';
           return;
         }
-        if (legendTime) legendTime.textContent = 'dot layer unavailable - tap the globe for a live point reading';
+        if (legendTime) legendTime.textContent = 'dot layer unavailable - tap the globe for a point reading';
       });
   }
   loadAqiLayer();
