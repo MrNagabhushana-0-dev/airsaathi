@@ -330,7 +330,10 @@
   function addMsg(kind, text) {
     var div = document.createElement('div');
     div.className = 'msg ' + kind;
-    div.textContent = text;
+    // Escape everything first, then allow only the model's **bold** markers as <strong>.
+    var esc = String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    esc = esc.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    div.innerHTML = esc;
     $('chat-log').appendChild(div);
     $('chat-log').scrollTop = $('chat-log').scrollHeight;
     return div;
