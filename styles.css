@@ -148,12 +148,15 @@ p.lead { color: var(--muted); max-width: 58ch; margin-top: 0; }
 
 @media (max-width: 760px) {
   #globe-hero { align-items: flex-start; }
-  .hero-copy { padding: 2.2rem 0 9rem; }
+  .hero-copy { padding: 2.2rem 0 4rem; }
   .globe-legend { display: none; }
   .globe-panel {
-    top: auto; bottom: .8rem; right: 50%; transform: translateX(50%);
-    width: calc(100vw - 1.6rem);
+    position: fixed; left: .8rem; right: .8rem; bottom: .8rem; top: auto;
+    transform: none; width: auto; z-index: 60;
+    transition: transform .3s ease, opacity .3s ease;
+    max-height: 62vh; overflow-y: auto;
   }
+  .globe-panel.gp-away { transform: translateY(130%); opacity: 0; pointer-events: none; }
 }
 
 /* ---------- Location search ---------- */
