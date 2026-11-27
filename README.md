@@ -11,10 +11,17 @@ answers free-text questions grounded in the same live data and profile.
 
 ## Live demo
 
-_Deployed link added at submission time._
+https://mrnagabhushana-0-dev.github.io/airsaathi/
 
 ## What it does
 
+- **Interactive 3D globe** — a dotted-Earth globe (three.js, world-atlas land data)
+  you can spin, zoom and tap. A coloured dot layer shows the current CAMS model US AQI
+  at each point of a global 24-degree grid (one batched Open-Meteo request, cached
+  3 hours on the device). Tapping anywhere - city, desert or open ocean - drops a
+  marker, flies the camera in, reverse-geocodes the spot and loads its live modelled
+  AQI, PM2.5 and band advice into a glass panel. Model timestamps are shown; the dots
+  are real model values, not decoration.
 - **Live dashboard** — current US AQI with EPA band advice, six key pollutants
   (PM2.5, PM10, NO₂, O₃, SO₂, CO), and a 48-hour hourly AQI forecast chart with the
   cleanest 2-hour outdoor window highlighted.
