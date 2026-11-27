@@ -320,3 +320,9 @@ footer.site { border-top: 1px solid var(--line); background: var(--bg-soft); }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
 }
+
+/* Touch targets: at least 44px tall on phones (WCAG 2.5.5 / Apple HIG) */
+@media (max-width: 640px) {
+  button, .btn, select, input[type="text"], input[type="number"], input[type="search"] { min-height: 44px; }
+  #nav-toggle, .nav-toggle { min-width: 44px; }
+}
