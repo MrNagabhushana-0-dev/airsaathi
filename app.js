@@ -165,7 +165,7 @@
           showAirError('Could not refresh the model data (' + e.message + '). Showing the snapshot cached on this device, ' +
             ageMin + ' min old - check the model hour before acting on it.', true);
         } else {
-          showAirError('Could not load live air data: ' + e.message + '.');
+          showAirError('Could not load air-quality data: ' + e.message + '.');
         }
       });
   }
@@ -419,7 +419,7 @@
       .then(function (res) {
         thinking.remove();
         addMsg('bot', res.text);
-        addMsg('meta', 'Answered by ' + res.provider + ', grounded in your live AQI and profile.');
+        addMsg('meta', 'Answered by ' + res.provider + ', grounded in the model AQI for your selected place and your saved household details.');
         $('provider-line').textContent = 'Assistant backend: ' + res.provider + '.';
         state.chat.push({ role: 'user', content: text }, { role: 'assistant', content: res.text });
         state.chat = state.chat.slice(-8);
