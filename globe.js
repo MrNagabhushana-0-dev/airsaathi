@@ -347,6 +347,12 @@ import { feature } from 'topojson-client';
     }, { threshold: 0.05 }).observe(document.getElementById('globe-hero'));
   }
 
+  /* Demo hook: drives the exact selection path a tap takes (used by the demo video). */
+  window.AirSaathiDemo = {
+    pickPlace: function (lat, lon) { setMarker(lat, lon); flyTo(lat, lon); selectFromGlobe(lat, lon); },
+    reset: resetView
+  };
+
   /* Restore the saved place (search/geo selections dispatch the event themselves) */
   if (window.AirSaathi && window.AirSaathi.snapshot) {
     var snap = window.AirSaathi.snapshot();
