@@ -350,7 +350,8 @@ import { feature } from 'topojson-client';
   /* Demo hook: drives the exact selection path a tap takes (used by the demo video). */
   window.AirSaathiDemo = {
     pickPlace: function (lat, lon) { setMarker(lat, lon); flyTo(lat, lon); selectFromGlobe(lat, lon); },
-    reset: resetView
+    reset: resetView,
+    stopRender: function () { rafOn = false; }
   };
 
   /* Restore the saved place (search/geo selections dispatch the event themselves) */
@@ -403,7 +404,9 @@ import { feature } from 'topojson-client';
   camera.position.copy(defaultCamPos());
 
   var clock = new THREE.Clock();
+  var rafOn = true;
   (function loop() {
+    if (!rafOn) return;
     requestAnimationFrame(loop);
     var t = clock.getElapsedTime();
     if (marker.visible) {
