@@ -68,14 +68,15 @@ import { feature } from 'topojson-client';
   controls.dampingFactor = 0.06;
   controls.rotateSpeed = 0.45;
   controls.minDistance = 1.5;
-  controls.maxDistance = 4.2;
+  controls.maxDistance = 8;
   var reducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   controls.autoRotate = !reducedMotion;
   controls.autoRotateSpeed = 0.55;
   controls.addEventListener('start', function () { controls.autoRotate = false; });
 
   var globe = new THREE.Group();
-  globe.rotation.y = (78 - 90) * Math.PI / 180; /* face India on load */
+  var INIT_ROT_Y = (78 - 90) * Math.PI / 180;
+  globe.rotation.y = INIT_ROT_Y; /* face India on load */
   stage.add(globe);
 
   /* Base sphere + fresnel atmosphere */
@@ -162,7 +163,7 @@ import { feature } from 'topojson-client';
     marker.visible = true;
   }
 
-  /* Camera fly-to */
+  /* Camera fly-to (position + optional globe rotation reset) */
   var tween = null;
   function flyTo(lat, lon) {
     var dir = globe.localToWorld(llToVec3(lat, lon, 1)).normalize();
@@ -175,8 +176,21 @@ import { feature } from 'topojson-client';
     var k = tween.dur === 0 ? 1 : Math.min(1, (now - tween.t0) / tween.dur);
     var e = k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
     camera.position.lerpVectors(tween.from, tween.to, e);
+    if (typeof tween.rotTo === 'number') {
+      globe.rotation.y = tween.rotFrom + (tween.rotTo - tween.rotFrom) * e;
+    }
     if (k >= 1) tween = null;
   }
+  function resetView() {
+    tween = {
+      t0: performance.now(), dur: reducedMotion ? 0 : 900,
+      from: camera.position.clone(), to: defaultCamPos(),
+      rotFrom: globe.rotation.y, rotTo: INIT_ROT_Y
+    };
+    controls.autoRotate = !reducedMotion;
+  }
+  var resetBtn = document.getElementById('globe-reset');
+  if (resetBtn) resetBtn.addEventListener('click', resetView);
 
   /* Global AQI dot layer: one batched request, cached 3 hours */
   var legendTime = document.getElementById('legend-time');
@@ -314,7 +328,7 @@ import { feature } from 'topojson-client';
     $('gp-band').textContent = band.label;
     $('gp-band').style.background = band.css;
     $('gp-pm25').textContent = typeof d.current.pm2_5 === 'number' ? d.current.pm2_5.toFixed(1) : '--';
-    $('gp-time').textContent = d.current.time ? 'Model value · ' + d.current.time.replace('T', ' ') + ' local' : '';
+    $('gp-time').textContent = d.current.time ? 'CAMS model hour · ' + d.current.time.replace('T', ' ') + ' (place local time)' : '';
   });
   $('gp-close').addEventListener('click', function () { panel.classList.add('hidden'); });
   $('gp-goto-dash').addEventListener('click', function () {
@@ -360,16 +374,27 @@ import { feature } from 'topojson-client';
   }
 
   /* Resize + render loop */
+  function defaultCamPos() {
+    var w = wrap.clientWidth, h = wrap.clientHeight;
+    var aspect = (w && h) ? w / h : 1.6;
+    if (w < 760) {
+      var need = 1.18 / (Math.tan(camera.fov * Math.PI / 360) * aspect);
+      return new THREE.Vector3(0, 0, Math.min(7.5, Math.max(4.6, need)));
+    }
+    return new THREE.Vector3(0, 0.15, 3.9);
+  }
   function resize() {
     var w = wrap.clientWidth, h = wrap.clientHeight;
     if (!w || !h) return;
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
-    if (w < 760) { stage.position.x = 0; } else { stage.position.x = 0.62; }
+    if (w < 760) { stage.position.x = 0; stage.position.y = -0.75; } else { stage.position.x = 0.62; stage.position.y = 0; }
+    camera.position.copy(defaultCamPos());
   }
   window.addEventListener('resize', resize);
   resize();
+  camera.position.copy(defaultCamPos());
 
   var clock = new THREE.Clock();
   (function loop() {
