@@ -359,8 +359,8 @@
     }
     $('impact-num').textContent = total.toLocaleString();
     var km = Math.round(total / 155);
-    $('impact-eq').textContent = 'That is roughly the CO2 from driving ' + km.toLocaleString() +
-      ' km in a petrol car, avoided every week (estimate). Note: this is a climate (CO2e) estimate, not a measured reduction in the pollution you personally breathe.' +
+    $('impact-eq').textContent = 'Estimated weekly saving from the swaps you marked adopted, not measured emissions. That is roughly the CO2 from driving ' + km.toLocaleString() +
+      ' km in a petrol car (estimate). It is a climate (CO2e) estimate, not a measured reduction in the pollution you personally breathe.' +
       (unquantified > 0 ? ' ' + unquantified + ' adopted swap(s) have no sourced factor and are not counted here.' : '');
   }
 
