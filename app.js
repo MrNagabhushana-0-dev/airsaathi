@@ -95,6 +95,7 @@
     state.place = place;
     saveJSON('airsaathi.place', place);
     $('city-input').value = place.name + (place.admin ? ', ' + place.admin : '');
+    document.dispatchEvent(new CustomEvent('airsaathi:place', { detail: place }));
     loadAir();
   }
 
@@ -120,6 +121,9 @@
           .filter(function (h) { return typeof h.aqi === 'number'; });
         renderDashboard();
         rebuildPlan();
+        document.dispatchEvent(new CustomEvent('airsaathi:air', {
+          detail: { place: state.place, current: state.current, hourly: state.hourly }
+        }));
       })
       .catch(function (e) { showError('Could not load live air data: ' + e.message); });
   }
@@ -393,4 +397,19 @@
     $('city-input').value = savedPlace.name + (savedPlace.admin ? ', ' + savedPlace.admin : '');
     loadAir();
   }
+
+  /* Test/demo hook: ?scrollto=<section id> jumps straight to a section after load. */
+  var scrollTarget = new URLSearchParams(location.search).get('scrollto');
+  if (scrollTarget) {
+    setTimeout(function () {
+      var el = $(scrollTarget);
+      if (el) el.scrollIntoView({ behavior: 'auto' });
+    }, 900);
+  }
+
+  /* Bridge for globe.js: lets the 3D globe select places and read the shared state. */
+  window.AirSaathi = {
+    selectPlace: selectPlace,
+    snapshot: function () { return { place: state.place, current: state.current, hourly: state.hourly }; }
+  };
 })();
