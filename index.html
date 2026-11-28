@@ -259,7 +259,10 @@
         Quality API</a> (CAMS / satellite and monitor based model, values are estimates, hourly model resolution; the
         global dot layer is one network request that counts as roughly 100 locations against the provider's free quota, cached for 3 hours on this device and capped at 4 loads a day). Place names:
         <a href="https://www.bigdatacloud.com/free-api/free-reverse-geocode-to-city-api" rel="noopener">BigDataCloud
-        reverse geocoder</a>. AQI shown on the US EPA scale. Emission savings are
+        reverse geocoder</a>. Map geometry (dots and coastlines): <a href="https://www.soest.hawaii.edu/pwessel/gshhg/" rel="noopener">GSHHG 2.3.7</a>
+        (Wessel &amp; Smith, SOEST/NOAA; shorelines from World Vector Shorelines, nominal 1:250,000 scale; licensed
+        LGPL-3.0+, texts in this repo as GSHHG-LICENSE.TXT and GSHHG-COPYING.LESSERv3). Coastlines are dataset
+        geometries, not surveys. AQI shown on the US EPA scale. Emission savings are
         labelled estimates, not measurements. Health guidance follows US EPA AQI action tables (EPA-456/F-14-002) and is not
         medical advice - follow your doctor's plan for asthma or heart conditions.</p>
     </div>
@@ -291,6 +294,7 @@
   <script src="engine.js"></script>
   <script src="ai.js"></script>
   <script src="app.js"></script>
-  <script type="module" src="globe.js?v=20261128c"></script>
+  <script type="module" src="globe.js?v=20261128d"></script>
 </body>
 </html>
+
