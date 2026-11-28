@@ -143,17 +143,28 @@ import { feature } from 'topojson-client';
      surveys; vertex counts and storage precision say nothing about positional
      accuracy. AQI colours come from the model grid (interpolated), never point
      measurements. */
+  var N_FIB = 66931; /* baked dot order: fibonacci field first, then per-polygon guarantees */
   function buildLand(kept) {
-    var g = new THREE.BufferGeometry();
-    g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(kept), 3));
-    var baseCol = new Float32Array(kept.length), bc = new THREE.Color(0x9fd4ef);
-    for (var q = 0; q < kept.length; q += 3) { baseCol[q] = bc.r; baseCol[q + 1] = bc.g; baseCol[q + 2] = bc.b; }
-    g.setAttribute('color', new THREE.BufferAttribute(baseCol, 3));
-    landGeom = g;
-    globe.add(new THREE.Points(g, new THREE.PointsMaterial({
-      size: 0.008, sizeAttenuation: true, map: dotTex, vertexColors: true,
-      alphaTest: 0.28, transparent: true, opacity: 0.95
-    })));
+    var fib = kept.slice(0, N_FIB * 3), poly = kept.slice(N_FIB * 3);
+    function makeSet(arr) {
+      var g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(arr), 3));
+      var baseCol = new Float32Array(arr.length), bc = new THREE.Color(0x9fd4ef);
+      for (var q = 0; q < arr.length; q += 3) { baseCol[q] = bc.r; baseCol[q + 1] = bc.g; baseCol[q + 2] = bc.b; }
+      g.setAttribute('color', new THREE.BufferAttribute(baseCol, 3));
+      var mesh = new THREE.Points(g, new THREE.PointsMaterial({
+        size: 0.008, sizeAttenuation: true, map: dotTex, vertexColors: true,
+        alphaTest: 0.28, transparent: true, opacity: 0.95
+      }));
+      globe.add(mesh);
+      return { g: g, mesh: mesh };
+    }
+    /* Dot LOD: the fibonacci field alone matches the deployed v2 density and carries the
+       far view; the 181,595 per-polygon guarantees (one per island) only matter at zoom,
+       so they draw only past the same distance where coastlines appear. */
+    landGeoms = [];
+    var f = makeSet(fib); landGeoms.push(f.g);
+    if (poly.length) { var pm = makeSet(poly); landGeoms.push(pm.g); polyDots = pm.mesh; polyDots.visible = false; }
     applyField();
   }
   function gunzip(buf) {
@@ -176,17 +187,25 @@ import { feature } from 'topojson-client';
   /* Coastline line mesh: subtle neutral colour, AQI dots stay the colour channel.
      Opacity ramps with zoom (far 0.12 -> near 0.90), updated in the render loop. */
   var coastMats = [];
+  var coastSets = { fine: [], coarse: [] };
   function loadCoast() {
-    return fetch('5-coast.bin.gz')
+    loadCoastFile('1-coast-coarse.bin.gz', 'coarse');
+    return loadCoastFile('5-coast.bin.gz', 'fine');
+  }
+  function loadCoastFile(url, setKey) {
+    return fetch(url)
       .then(function (r) { if (!r.ok) throw new Error('coast ' + r.status); return r.arrayBuffer(); })
       .then(gunzip)
       .then(function (buf) {
         var dv = new DataView(buf);
         if (dv.getUint32(0, true) !== 0x31485347) return;
-        var nChunks = dv.getUint16(6, true), off = 8;
+        var nChunks = dv.getUint16(6, true);
+        /* Baked layout: all 12-byte chunk headers (f32 lon0, f32 lat0, u32 nseg) first,
+           then all segment data back to back. */
+        var idx = 8, off = 8 + nChunks * 12;
         for (var c = 0; c < nChunks; c++) {
-          var lon0 = dv.getFloat32(off, true), lat0 = dv.getFloat32(off + 4, true), nseg = dv.getUint32(off + 8, true);
-          off += 12;
+          var lon0 = dv.getFloat32(idx, true), lat0 = dv.getFloat32(idx + 4, true), nseg = dv.getUint32(idx + 8, true);
+          idx += 12;
           var pos = new Float32Array(nseg * 2 * 3), o = 0;
           for (var s = 0; s < nseg * 2; s++) {
             var lon = lon0 + dv.getUint16(off, true) / 3600, lat = lat0 + dv.getUint16(off + 2, true) / 3600;
@@ -199,7 +218,10 @@ import { feature } from 'topojson-client';
           g.computeBoundingSphere();
           var mat = new THREE.LineBasicMaterial({ color: 0x86c5e8, transparent: true, opacity: 0.12, depthWrite: false });
           coastMats.push(mat);
-          globe.add(new THREE.LineSegments(g, mat));
+          var mesh = new THREE.LineSegments(g, mat);
+          mesh.visible = false;
+          coastSets[setKey].push(mesh);
+          globe.add(mesh);
         }
       }).catch(function () { /* coastlines optional; dots alone still carry the map */ });
   }
@@ -260,16 +282,17 @@ import { feature } from 'topojson-client';
      API-call count, so this grid is ~105 calls against the visitor's own free-tier
      budget (10k/day, non-commercial) - about 1% per cold load, refreshed at most 8x/day. */
   var legendTime = document.getElementById('legend-time');
-  var landGeom = null, gridValues = null;
+  var landGeoms = null, gridValues = null, polyDots = null;
   /* Colour each land dot from the real model grid: inverse-distance blend of the 3 nearest
      grid points (24 deg spacing), then the AQI band colour. This is an interpolation of model
      values, not a measurement at that dot - the legend says so; tap gives the exact point. */
   function applyField() {
-    if (!landGeom || !gridValues) return;
+    if (!landGeoms || !gridValues) return;
     var pts = gridValues.filter(function (v) { return typeof v.aqi === 'number'; }).map(function (v) {
       var p = llToVec3(v.lat, v.lon, 1); return { x: p.x, y: p.y, z: p.z, aqi: v.aqi };
     });
     if (pts.length < 3) return;
+   landGeoms.forEach(function (landGeom) {
     var pos = landGeom.getAttribute('position'), col = landGeom.getAttribute('color'), n = pos.count;
     for (var i = 0; i < n; i++) {
       var x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i), l = Math.sqrt(x * x + y * y + z * z);
@@ -285,6 +308,7 @@ import { feature } from 'topojson-client';
       col.setXYZ(i, c.r, c.g, c.b);
     }
     col.needsUpdate = true;
+   });
   }
   /* Dots + coastlines load async; buildLand runs applyField, and buildAqiLayer re-runs
      applyField when the grid arrives - whichever lands second colours the dots. */
@@ -600,6 +624,17 @@ import { feature } from 'topojson-client';
       var zt = Math.min(1, Math.max(0, (3.9 - cd) / (3.9 - 1.5)));
       var op = 0.12 + 0.78 * zt;
       for (var cm = 0; cm < coastMats.length; cm++) coastMats[cm].opacity = op;
+      /* Adaptive LOD: coastlines are invisible below ~0.3 opacity anyway, so far view draws
+         none; mid zoom draws the 110k-segment coarse set; only close zoom draws the full
+         1.36M-segment set (frustum-culled per 10-degree chunk). Keeps the default view at
+         the old dots-only cost. */
+      var showFine = cd <= 1.95, showCoarse = cd > 1.95 && cd <= 2.55;
+      if (polyDots) polyDots.visible = cd <= 2.55;
+      var mi;
+      for (mi = 0; mi < coastSets.fine.length; mi++) coastSets.fine[mi].visible = showFine;
+      for (mi = 0; mi < coastSets.coarse.length; mi++) coastSets.coarse[mi].visible = showCoarse;
+    } else if (polyDots) {
+      polyDots.visible = camera.position.length() <= 2.55;
     }
     controls.update();
     renderer.render(scene, camera);
