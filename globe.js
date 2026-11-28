@@ -129,15 +129,23 @@ import { feature } from 'topojson-client';
     })));
   })();
 
-  /* Land dots */
-  fetch('https://cdn.jsdelivr.net/npm/world-atlas@2.0.2/land-110m.json')
-    .then(function (r) { return r.json(); })
+  /* Land dots: 50m coastlines (accurate peninsulas and islands such as Sri Lanka),
+     with the smaller 110m file as fallback if the CDN or network drops the big one. */
+  fetch('https://cdn.jsdelivr.net/npm/world-atlas@2.0.2/land-50m.json')
+    .then(function (r) { if (!r.ok) throw new Error('land50 ' + r.status); return r.json(); })
+    .catch(function () {
+      return fetch('https://cdn.jsdelivr.net/npm/world-atlas@2.0.2/land-110m.json')
+        .then(function (r) { return r.json(); });
+    })
     .then(function (topo) {
       var land = feature(topo, topo.objects.land);
-      var SAMPLES = 20000, kept = [];
-      /* Land mask: rasterise the land polygons once onto an equirectangular canvas, then look dots up.
-         The exact spherical point-in-polygon test took ~10 s on first load and left the globe blank. */
-      var MW = 1440, MH = 720, maskData = null;
+      /* Dense sampling: 20k samples left only ~4 dots on Kerala and ~3 on all of Sri Lanka,
+         which made the southern peninsula look cut off (reported 2026-11-28). 240k keeps ~68k. */
+      var SAMPLES = 240000, kept = [];
+      /* Land mask: rasterise the land polygons once onto an equirectangular canvas (0.125 deg
+         pixels), then look dots up. The exact spherical point-in-polygon test took ~10 s on
+         first load and left the globe blank. */
+      var MW = 2880, MH = 1440, maskData = null;
       try {
         var mc = document.createElement('canvas'); mc.width = MW; mc.height = MH;
         var mx = mc.getContext('2d', { willReadFrequently: true });
@@ -182,7 +190,7 @@ import { feature } from 'topojson-client';
       g.setAttribute('color', new THREE.BufferAttribute(baseCol, 3));
       landGeom = g;
       globe.add(new THREE.Points(g, new THREE.PointsMaterial({
-        size: 0.026, sizeAttenuation: true, map: dotTex, vertexColors: true,
+        size: 0.008, sizeAttenuation: true, map: dotTex, vertexColors: true,
         alphaTest: 0.28, transparent: true, opacity: 0.95
       })));
       applyField();
