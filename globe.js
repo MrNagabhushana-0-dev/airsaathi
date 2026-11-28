@@ -229,6 +229,7 @@ import { feature } from 'topojson-client';
 
   /* Selection marker */
   var marker = new THREE.Group();
+  var _mwv = new THREE.Vector3();
   var ring = new THREE.Mesh(
     new THREE.RingGeometry(0.028, 0.042, 48),
     new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.95, side: THREE.DoubleSide, depthWrite: false })
@@ -617,6 +618,12 @@ import { feature } from 'topojson-client';
     if (marker.visible) {
       var s = 1 + 0.18 * Math.sin(t * 3.2);
       ring.scale.set(s, s, s);
+      /* Cap the marker's apparent screen size: scale the group inversely with the
+         measured camera-to-marker distance (1.2 = that distance at the cd-2.4 close
+         view), so the ring keeps a constant on-screen size at any deeper zoom and
+         never occludes the detail the user zoomed in to see. */
+      var ms = Math.max(0.2, Math.min(1, camera.position.distanceTo(marker.getWorldPosition(_mwv)) / 1.2));
+      marker.scale.set(ms, ms, ms);
     }
     stepTween(performance.now());
     if (coastMats.length) {
