@@ -131,7 +131,7 @@ import { feature } from 'topojson-client';
 
   /* Land dots + coastlines, rebuilt 2026-11-28 v3 on user request for minute detail.
      Geometry source: GSHHG 2.3.7 (Wessel & Smith, SOEST/NOAA; LGPL v3+, license texts
-     ship in this repo as GSHHG-LICENSE.TXT and GSHHG-COPYING.LESSERv3), native binary
+     ship in this repo as 3-GSHHG-LICENSE.TXT and 4-GSHHG-COPYING.LESSERv3), native binary
      parsed offline: high-res level-1 land polygons (144,744) + full-res islands the
      high-res decimation dropped (35,088) + lakes/river-lakes (L2), islands-in-lakes
      (L3), ponds (L4), Antarctica ice-front (L5) - 188,206 polygons in total.
@@ -161,7 +161,7 @@ import { feature } from 'topojson-client';
     return new Response(new Response(buf).body.pipeThrough(new DecompressionStream('gzip'))).arrayBuffer();
   }
   function loadBakedDots() {
-    return fetch('dots-gshhg.bin.gz')
+    return fetch('2-dots-gshhg.bin.gz')
       .then(function (r) { if (!r.ok) throw new Error('dots ' + r.status); return r.arrayBuffer(); })
       .then(gunzip)
       .then(function (buf) {
@@ -177,7 +177,7 @@ import { feature } from 'topojson-client';
      Opacity ramps with zoom (far 0.12 -> near 0.90), updated in the render loop. */
   var coastMats = [];
   function loadCoast() {
-    return fetch('coast.bin.gz')
+    return fetch('5-coast.bin.gz')
       .then(function (r) { if (!r.ok) throw new Error('coast ' + r.status); return r.arrayBuffer(); })
       .then(gunzip)
       .then(function (buf) {
