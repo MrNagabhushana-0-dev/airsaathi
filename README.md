@@ -103,6 +103,23 @@ No build step, no dependencies, no trackers; three small static files (< 100 KB 
   2-hour stretch is then presented only as the least-bad time for unavoidable trips,
   never as a safe exercise window. It is not medical advice.
 
+## Geography data
+
+Shorelines, lakes and islands on the globe come from GSHHG 2.3.7 (Global Self-consistent,
+Hierarchical, High-resolution Geography; Wessel & Smith, SOEST/NOAA:
+https://www.soest.hawaii.edu/pwessel/gshhg/). GSHHG is free software under the GNU Lesser
+General Public License v3 or later; the license texts ship in this repo as
+3-GSHHG-LICENSE.TXT and 4-GSHHG-COPYING.LESSERv3. The baked geometry files
+(2-dots-gshhg.bin.gz and 5-coast.bin.gz) are processed offline from the GSHHG native binary:
+high-resolution level-1 land polygons plus level-2 lakes, level-3 islands-in-lakes,
+level-4 ponds and the level-5 Antarctica ice front, decimated where detail is invisible at
+globe zoom levels, chunked into 10-degree tiles and gzipped.
+
+GSHHG shorelines derive from World Vector Shorelines at a nominal 1:250,000 scale. They are
+dataset geometries, not surveys: vertex counts and storage precision say nothing about
+positional accuracy. AQI colours on the globe come from the CAMS model grid (interpolated),
+never point measurements.
+
 ## Run locally
 
 Any static server works:
